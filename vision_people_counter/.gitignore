@@ -1,0 +1,28 @@
+# 📁 Environnement virtuel
+venv/
+.venv/
+
+# 📁 Fichiers générés automatiquement
+__pycache__/
+*.pyc
+*.pyo
+
+# 💣 Fichiers lourds (poids inutiles dans Git)
+models/*.weights
+models/*.cfg
+models/*.txt
+
+# 📦 Fichiers installés par des libs
+*.h5
+*.pb
+*.tflite
+
+# 🖼️ Données temporaires ou de test
+*.jpg
+*.jpeg
+*.png
+data/
+
+# 📄 OS files
+.DS_Store
+Thumbs.db
