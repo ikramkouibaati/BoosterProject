@@ -1,6 +1,8 @@
 import cv2
 import os
 import numpy as np
+import csv
+from datetime import datetime
 
 # Chargement des fichiers du modèle
 MODEL_PATH = os.path.join("models", "yolov3.weights")
@@ -23,53 +25,70 @@ def start_detection():
 
     print("✅ Webcam activée. Appuie sur 'q' pour quitter.")
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    last_count = -1  # Pour détecter les changements
+    log_path = "people_log.csv"
 
-        height, width = frame.shape[:2]
+    with open(log_path, mode='w', newline='') as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerow(["timestamp", "nb_personnes"])
 
-        # Préparation de l'image
-        blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
-        net.setInput(blob)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        ln = net.getUnconnectedOutLayersNames()
-        layer_outputs = net.forward(ln)
+            height, width = frame.shape[:2]
 
-        boxes, confidences, class_ids = [], [], []
+            # Préparation de l'image
+            blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
+            net.setInput(blob)
 
-        for output in layer_outputs:
-            for detection in output:
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
+            ln = net.getUnconnectedOutLayersNames()
+            layer_outputs = net.forward(ln)
 
-                if confidence > 0.5 and CLASSES[class_id] == "person":
-                    box = detection[0:4] * np.array([width, height, width, height])
-                    (centerX, centerY, w, h) = box.astype("int")
+            boxes, confidences, class_ids = [], [], []
 
-                    x = int(centerX - w / 2)
-                    y = int(centerY - h / 2)
+            for output in layer_outputs:
+                for detection in output:
+                    scores = detection[5:]
+                    class_id = np.argmax(scores)
+                    confidence = scores[class_id]
 
-                    boxes.append([x, y, int(w), int(h)])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
+                    if confidence > 0.5 and CLASSES[class_id] == "person":
+                        box = detection[0:4] * np.array([width, height, width, height])
+                        (centerX, centerY, w, h) = box.astype("int")
 
-        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+                        x = int(centerX - w / 2)
+                        y = int(centerY - h / 2)
 
-        if len(indexes) > 0:
-            for i in indexes.flatten():
-                (x, y, w, h) = boxes[i]
-                color = COLORS[class_ids[i]]
-                label = f"{CLASSES[class_ids[i]]}: {confidences[i]:.2f}"
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-                cv2.putText(frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                        boxes.append([x, y, int(w), int(h)])
+                        confidences.append(float(confidence))
+                        class_ids.append(class_id)
 
-        cv2.imshow("Détection de personnes (OpenCV)", frame)
+            indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+            if len(indexes) > 0:
+                for i in indexes.flatten():
+                    (x, y, w, h) = boxes[i]
+                    color = COLORS[class_ids[i]]
+                    label = f"{CLASSES[class_ids[i]]}: {confidences[i]:.2f}"
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                    cv2.putText(frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+            # ✅ Nombre de personnes détectées
+            nb_personnes = len(indexes)
+
+            # ➕ Log seulement si le nombre a changé
+            if nb_personnes != last_count:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                csv_writer.writerow([timestamp, nb_personnes])
+                print(f"🔄 Changement détecté → {nb_personnes} personne(s)")
+                last_count = nb_personnes
+
+            cv2.imshow("Détection de personnes (OpenCV)", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 
     cap.release()
     cv2.destroyAllWindows()
