@@ -7,12 +7,12 @@ Projet de détection, suivi et comptage de personnes en temps réel à l'aide de
 ## ✅ Fonctionnalités actuelles
 
 - 🎯 Détection de personnes en temps réel avec **YOLOv8** (Ultralytics).
-- 📦 Interface Streamlit simple et rapide (`app.py` ou `app_multi_streamlit.py`).
+- 📦 Interface Streamlit simple et rapide (`app.py`).
 - 🧠 Suivi par ID (tracking).
 - 🪵 Log automatique des détections dans `people_log.csv`.
 - 📁 Organisation propre du projet.
 - 🖼️ Support d’images et de vidéos depuis `/images` et `/videos`.
-- 🔁 Gestion de **multi-flux** vidéo simultanés (avec `multi_stream_yolo_logger.py`).
+- 🔁 Gestion de **multi-flux** vidéo simultanés (avec `helper.py`).
 
 ---
 
